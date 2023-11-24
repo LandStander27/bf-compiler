@@ -13,7 +13,7 @@ struct Args {
 	#[arg(short, long, help = "Enables debug outputs in compiled executable")]
 	debug: bool,
 
-	#[arg(short, long, help = "Runs executable after compilation")]
+	#[arg(short, long, help = "Runs directory from memory (disables stdin)")]
 	run: bool,
 }
 
@@ -46,16 +46,21 @@ fn main() {
 			print_error!("Could not open file: {}", e);
 		}
 	};
+	let code: String = code.lines().filter(|x| !x.starts_with("#")).collect();
 	let code: String = code.chars().filter(|x| "><+-.,[]\n".contains(*x)).collect();
+
+	let in_file = std::path::Path::new(&args.file).file_name().unwrap().to_str().unwrap();
+
+	if code.matches("[").count() != code.matches("]").count() {
+		print_error!("At {}: Mismatched brackets []", in_file);
+	}
 
 	let mut write_out: String = String::new();
 	write_out.push_str("
-#include <tcclib.h>
+#include <stdio.h>
 #define red \"\\x1b[31m\"
 #define reset \"\\x1b[0m\"
 ");
-
-	let in_file = std::path::Path::new(&args.file).file_name().unwrap().to_str().unwrap();
 
 	write_out.push_str("int main() {");
 
@@ -94,6 +99,9 @@ fn main() {
 			},
 			']' => {
 				write_out.push_str("} ");
+			},
+			',' => {
+				write_out.push_str(&format!("int ret = scanf(\"%c\", &data[current_index]); if (ret < 0) {{ printf(red \"[ERR] At {}:{}:{}\nUnexpected EOF\\n\" reset); return 1; }} else if (ret == 0) {{ printf(red \"[ERR] At {}:{}:{}\nNo value assigned\\n\" reset); return 1; }} ", in_file, l, i+1-line_start, in_file, l, i+1-line_start));
 			},
 			'\n' => {
 				l += 1;
