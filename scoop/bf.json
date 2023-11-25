@@ -4,6 +4,6 @@
 	"homepage": "https://github.com/LandStander27/bf-compiler",
 	"license": "Freeware",
 	"bin": "bf.exe",
-	"url": "https://github.com/LandStander27/bf-compiler/releases/download/v1/bf.7z",
+	"url": "https://github.com/LandStander27/bf-compiler/releases/download/v2/bf.7z",
 	"hash": "D6FA355AE964259CD29B7FB70DB8691A25A8E11625D40B6B27452926F67FD140"
 }
