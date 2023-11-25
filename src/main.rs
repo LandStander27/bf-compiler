@@ -125,20 +125,24 @@ fn main() {
 			},
 			'>' => {
 				// write_out.push_str(&format!("if (current_index == 999) {{ printf(red \"[ERR] At {}:{}:{}\nCurrent index cannot be greater than 999\\n\" reset); return 1; }} ", in_file, l, i+1-line_start));
-				write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location incremented.\\n\"); ", in_file, l, i+1-line_start));
 				write_out.push_str("if (current_index != 999) { current_index += 1; } ");
 				if args.debug {
+					write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location incremented.\\n\"); ", in_file, l, i+1-line_start));
 					write_out.push_str("if (current_index > biggest_index) { biggest_index = current_index; } ");
 				}
 			},
 			'<' => {
 				// write_out.push_str(&format!("if (current_index == 0) {{ printf(red \"[ERR] At {}:{}:{}\nCurrent index cannot be lower than 0\\n\" reset); return 1; }} ", in_file, l, i+1-line_start));
-				write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location decremented.\\n\"); ", in_file, l, i+1-line_start));
+				if args.debug {
+					write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location decremented.\\n\"); ", in_file, l, i+1-line_start));
+				}
 				write_out.push_str("if (current_index != 0) { current_index -= 1; } ");
 			},
 			'.' => {
 				// write_out.push_str(&format!("print!(\"{{}}\", String::from_utf8(vec![data[current_index] as u8]).unwrap_or_else(|e| {{ print_error!(\"At char {}: {{}}\", e); }} )); ", i+1));
-				write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location %d output to stdout.\\n\", current_index); ", in_file, l, i+1-line_start));
+				if args.debug {
+					write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location %d output to stdout.\\n\", current_index); ", in_file, l, i+1-line_start));
+				}
 				write_out.push_str("printf(\"%c\", (char)data[current_index]); ");
 			},
 			'[' => {
@@ -148,7 +152,9 @@ fn main() {
 				write_out.push_str("} ");
 			},
 			',' => {
-				write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location %d input from stdin.\\n\", current_index); ", in_file, l, i+1-line_start));
+				if args.debug {
+					write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location %d input from stdin.\\n\", current_index); ", in_file, l, i+1-line_start));
+				}
 				write_out.push_str(&format!("int ret = scanf(\"%c\", &data[current_index]); if (ret < 0) {{ printf(red \"[ERR] At {}:{}:{}\nUnexpected EOF\\n\" reset); return 1; }} else if (ret == 0) {{ printf(red \"[ERR] At {}:{}:{}\nNo value assigned\\n\" reset); return 1; }} ", in_file, l, i+1-line_start, in_file, l, i+1-line_start));
 			},
 			'\n' => {
