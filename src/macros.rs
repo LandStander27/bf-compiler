@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! print_error {
 	($string:expr $(, $opt:expr)*) => {
-		println!("{}{}", style("[ERR] ").red().bold().dim(), style(format!($string, $($opt),*)).red());
+		println!("{}{}", style("[ERR] ").red().bold(), format!($string, $($opt),*));
 		std::process::exit(1);
 	};
 }

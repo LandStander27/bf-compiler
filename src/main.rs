@@ -7,14 +7,17 @@ mod macros;
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Args {
-	#[arg(help = "The file to compile", required = true)]
-	file: String,
+	#[arg(help = "The file to compile")]
+	file: Option<String>,
 
 	#[arg(short, long, help = "Enables debug outputs in compiled executable")]
 	debug: bool,
 
 	#[arg(short, long, help = "Runs directory from memory (disables stdin)")]
 	run: bool,
+
+	#[arg(short, long, help = "Display individual steps")]
+	verbose: bool,
 }
 
 fn tcc_path() -> Result<std::path::PathBuf, String> {
@@ -40,21 +43,38 @@ fn main() {
 
 	let args = Args::parse();
 
-	let code = match std::fs::read_to_string(&args.file) {
+	if args.file.is_none() {
+		print_error!("The following required argument was not provided:\n{}\n\nFor more information, try '--help'.", style("  <FILE>").green());
+	}
+	let file = args.file.unwrap();
+
+	if args.verbose {
+		print_info!("Reading from file.");
+	}
+	let code = match std::fs::read_to_string(&file) {
 		Ok(o) => o,
 		Err(e) => {
 			print_error!("Could not open file: {}", e);
 		}
 	};
+	if args.verbose {
+		print_info!("Filtering characters from file.");
+	}
 	let code: String = code.lines().filter(|x| !x.starts_with("#")).collect();
 	let code: String = code.chars().filter(|x| "><+-.,[]\n".contains(*x)).collect();
 
-	let in_file = std::path::Path::new(&args.file).file_name().unwrap().to_str().unwrap();
+	let in_file = std::path::Path::new(&file).file_name().unwrap().to_str().unwrap();
 
+	if args.verbose {
+		print_info!("Testing for mismatched brackets.");
+	}
 	if code.matches("[").count() != code.matches("]").count() {
 		print_error!("At {}: Mismatched brackets []", in_file);
 	}
 
+	if args.verbose {
+		print_info!("Parsing code.");
+	}
 	let mut write_out: String = String::new();
 	write_out.push_str("
 #include <stdio.h>
@@ -122,6 +142,9 @@ fn main() {
 	write_out.push_str("return 0; ");
 	write_out.push('}');
 
+	if args.verbose {
+		print_info!("Getting tcc.");
+	}
 	let tcc = match tcc_path() {
 		Ok(o) => o,
 		Err(e) => {
@@ -129,7 +152,10 @@ fn main() {
 		}
 	};
 
-	let out = std::path::Path::new(&args.file).file_stem().unwrap().to_str().unwrap();
+	if args.verbose {
+		print_info!("Compiling.");
+	}
+	let out = std::path::Path::new(&file).file_stem().unwrap().to_str().unwrap();
 	let mut binding = std::process::Command::new(&tcc);
 	let cmd = binding.arg("-Os").arg("-").arg("-o").arg(format!("{}.exe", out));
 	if args.run {
@@ -147,6 +173,9 @@ fn main() {
 		Err(e) => {
 			print_error!("Could not call compiler: {}: {}", tcc.to_str().unwrap(), e);
 		}
+	}
+	if args.verbose {
+		print_info!("Done.");
 	}
 
 }
