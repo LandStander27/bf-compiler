@@ -60,8 +60,17 @@ fn main() {
 	if args.verbose {
 		print_info!("Filtering characters from file.");
 	}
-	let code: String = code.lines().filter(|x| !x.starts_with("#")).collect();
-	let code: String = code.chars().filter(|x| "><+-.,[]\n".contains(*x)).collect();
+
+	let start_time = std::time::Instant::now();
+
+	// let code: String = code.lines().filter(|x| !x.starts_with("//")).map(|x| format!("{}\n", x)).collect();
+	let commented_lines: Vec<usize> = code.lines().enumerate().filter_map(|(i, x)| {
+		if x.starts_with("//") {
+			return Some(i);
+		}
+		return None;
+	}).collect();
+	let code: String = code.chars().filter(|x| "><+-.,[]/\n".contains(*x)).collect();
 
 	let in_file = std::path::Path::new(&file).file_name().unwrap().to_str().unwrap();
 
@@ -79,6 +88,8 @@ fn main() {
 	write_out.push_str("
 #include <stdio.h>
 #define red \"\\x1b[31m\"
+#define dim \"\\x1b[2m\"
+#define bold \"\\x1b[1m\"
 #define reset \"\\x1b[0m\"
 ");
 
@@ -92,26 +103,42 @@ fn main() {
 	let mut l = 1;
 	let mut line_start = 0;
 	for (i, c) in code.chars().enumerate() {
+		if commented_lines.contains(&(l-1)) {
+			if c == '\n' {
+				l += 1;
+				line_start = i+1;
+			}
+			continue;
+		}
 		match c {
 			'+' => {
+				if args.debug {
+					write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location %d incremented.\\n\", current_index); ", in_file, l, i+1-line_start));
+				}
 				write_out.push_str("data[current_index]++; ");
 			},
 			'-' => {
+				if args.debug {
+					write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location %d decremented.\\n\", current_index); ", in_file, l, i+1-line_start));
+				}
 				write_out.push_str("data[current_index]--; ");
 			},
 			'>' => {
-				write_out.push_str(&format!("if (current_index == 999) {{ printf(red \"[ERR] At {}:{}:{}\nCurrent index cannot be greater than 999\\n\" reset); return 1; }} ", in_file, l, i+1-line_start));
-				write_out.push_str("current_index += 1; ");
+				// write_out.push_str(&format!("if (current_index == 999) {{ printf(red \"[ERR] At {}:{}:{}\nCurrent index cannot be greater than 999\\n\" reset); return 1; }} ", in_file, l, i+1-line_start));
+				write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location incremented.\\n\"); ", in_file, l, i+1-line_start));
+				write_out.push_str("if (current_index != 999) { current_index += 1; } ");
 				if args.debug {
 					write_out.push_str("if (current_index > biggest_index) { biggest_index = current_index; } ");
 				}
 			},
 			'<' => {
-				write_out.push_str(&format!("if (current_index == 0) {{ printf(red \"[ERR] At {}:{}:{}\nCurrent index cannot be lower than 0\\n\" reset); return 1; }} ", in_file, l, i+1-line_start));
-				write_out.push_str("current_index -= 1; ");
+				// write_out.push_str(&format!("if (current_index == 0) {{ printf(red \"[ERR] At {}:{}:{}\nCurrent index cannot be lower than 0\\n\" reset); return 1; }} ", in_file, l, i+1-line_start));
+				write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location decremented.\\n\"); ", in_file, l, i+1-line_start));
+				write_out.push_str("if (current_index != 0) { current_index -= 1; } ");
 			},
 			'.' => {
 				// write_out.push_str(&format!("print!(\"{{}}\", String::from_utf8(vec![data[current_index] as u8]).unwrap_or_else(|e| {{ print_error!(\"At char {}: {{}}\", e); }} )); ", i+1));
+				write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location %d output to stdout.\\n\", current_index); ", in_file, l, i+1-line_start));
 				write_out.push_str("printf(\"%c\", (char)data[current_index]); ");
 			},
 			'[' => {
@@ -121,6 +148,7 @@ fn main() {
 				write_out.push_str("} ");
 			},
 			',' => {
+				write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location %d input from stdin.\\n\", current_index); ", in_file, l, i+1-line_start));
 				write_out.push_str(&format!("int ret = scanf(\"%c\", &data[current_index]); if (ret < 0) {{ printf(red \"[ERR] At {}:{}:{}\nUnexpected EOF\\n\" reset); return 1; }} else if (ret == 0) {{ printf(red \"[ERR] At {}:{}:{}\nNo value assigned\\n\" reset); return 1; }} ", in_file, l, i+1-line_start, in_file, l, i+1-line_start));
 			},
 			'\n' => {
@@ -136,7 +164,7 @@ fn main() {
 	}
 
 	if args.debug {
-		write_out.push_str("printf(\"[\"); if (biggest_index > 0) { for (int i = 0; i < biggest_index; i++) { printf(\"%d, \", data[i]); } } printf(\"%d]\\n\", data[biggest_index]); ");
+		write_out.push_str("printf(\"Ending data: [\"); if (biggest_index > 0) { for (int i = 0; i < biggest_index; i++) { printf(\"%d, \", data[i]); } } printf(\"%d]\\n\", data[biggest_index]); ");
 	}
 
 	write_out.push_str("return 0; ");
@@ -174,6 +202,8 @@ fn main() {
 			print_error!("Could not call compiler: {}: {}", tcc.to_str().unwrap(), e);
 		}
 	}
+	print_info!("Successfully compiled in {}ms", start_time.elapsed().as_millis());
+
 	if args.verbose {
 		print_info!("Done.");
 	}
