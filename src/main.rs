@@ -126,6 +126,7 @@ fn main() {
 			'>' => {
 				// write_out.push_str(&format!("if (current_index == 999) {{ printf(red \"[ERR] At {}:{}:{}\nCurrent index cannot be greater than 999\\n\" reset); return 1; }} ", in_file, l, i+1-line_start));
 				write_out.push_str("if (current_index != 999) { current_index += 1; } ");
+				write_out.push_str(&format!("else {{ printf(red bold \"[ERR] \" reset \"At {}:{}:{} Location cannot be incremented any more.\\n\"); }} ", in_file, l, i+1-line_start));
 				if args.debug {
 					write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location incremented.\\n\"); ", in_file, l, i+1-line_start));
 					write_out.push_str("if (current_index > biggest_index) { biggest_index = current_index; } ");
@@ -137,6 +138,7 @@ fn main() {
 					write_out.push_str(&format!("printf(dim bold \"[INF] \" reset \"At {}:{}:{} Location decremented.\\n\"); ", in_file, l, i+1-line_start));
 				}
 				write_out.push_str("if (current_index != 0) { current_index -= 1; } ");
+				write_out.push_str(&format!("else {{ printf(red bold \"[ERR] \" reset \"At {}:{}:{} Location cannot be decremented any more.\\n\"); }} ", in_file, l, i+1-line_start));
 			},
 			'.' => {
 				// write_out.push_str(&format!("print!(\"{{}}\", String::from_utf8(vec![data[current_index] as u8]).unwrap_or_else(|e| {{ print_error!(\"At char {}: {{}}\", e); }} )); ", i+1));

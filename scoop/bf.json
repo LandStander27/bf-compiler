@@ -1,9 +1,9 @@
 {
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"descrption": "Compiler for the BF language.",
 	"homepage": "https://github.com/LandStander27/bf-compiler",
 	"license": "Freeware",
 	"bin": "bf.exe",
-	"url": "https://github.com/LandStander27/bf-compiler/releases/download/v2/bf.7z",
-	"hash": "64BF2D8858A6DEAED05ED530113AD6ED5633A2D513217A8CFF8D4F2E1C70496F"
+	"url": "https://github.com/LandStander27/bf-compiler/releases/download/v3/bf.7z",
+	"hash": "265F1CC7195ED6E35FCE7CAA7648524A57F149C55F688268A15596A37048D570"
 }
